@@ -2,25 +2,104 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Test Cộng 2 Số</title>
+<title>Quản lý tài sản</title>
+<style>
+body {
+  font-family: -apple-system, sans-serif;
+  background: #f2f2f7;
+  padding: 20px;
+}
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 15px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 10px;
+  border: 1px solid #ccc;
+  font-size: 16px;
+}
+button {
+  width: 100%;
+  padding: 12px;
+  background: #007AFF;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+}
+.total {
+  font-size: 22px;
+  margin-top: 15px;
+  font-weight: bold;
+}
+.history {
+  margin-top: 20px;
+  font-size: 14px;
+}
+.item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+}
+</style>
 </head>
-<body style="font-family: sans-serif; padding:20px;">
+<body>
 
-<h2>Tính tổng 2 số</h2>
+<div class="card">
+<h2>💰 Tài sản tiết kiệm</h2>
 
-<input type="number" id="a" placeholder="Số thứ nhất"><br><br>
-<input type="number" id="b" placeholder="Số thứ hai"><br><br>
+<input type="number" id="amount" placeholder="Nhập số tiền">
 
-<button onclick="tinh()">Tính</button>
+<button onclick="addMoney()">Lưu</button>
 
-<h3 id="ketqua">Kết quả:</h3>
+<div class="total" id="total">Tổng: 0 VND</div>
+
+<div class="history" id="history"></div>
+</div>
 
 <script>
-function tinh() {
-  var a = Number(document.getElementById("a").value);
-  var b = Number(document.getElementById("b").value);
-  document.getElementById("ketqua").innerText =
-    "Kết quả: " + (a + b);
+let total = 0;
+let history = [];
+
+window.onload = function() {
+  total = Number(localStorage.getItem("total")) || 0;
+  history = JSON.parse(localStorage.getItem("history")) || [];
+  updateUI();
+};
+
+function addMoney() {
+  let amount = Number(document.getElementById("amount").value);
+  if (!amount) return;
+
+  total += amount;
+  history.push({
+    value: amount,
+    date: new Date().toLocaleString()
+  });
+
+  localStorage.setItem("total", total);
+  localStorage.setItem("history", JSON.stringify(history));
+
+  document.getElementById("amount").value = "";
+  updateUI();
+}
+
+function updateUI() {
+  document.getElementById("total").innerText =
+    "Tổng: " + total.toLocaleString() + " VND";
+
+  let html = "";
+  history.slice().reverse().forEach(item => {
+    html += "<div class='item'>+" +
+      item.value.toLocaleString() +
+      " VND - " + item.date + "</div>";
+  });
+
+  document.getElementById("history").innerHTML = html;
 }
 </script>
 
