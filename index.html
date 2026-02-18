@@ -173,12 +173,23 @@ function loadData(){
 }
 
 /* GOLD */
+
 function addGold(){
   if(!goldName.value||!goldQty.value)return;
-  golds.push({name:goldName.value,qty:Number(goldQty.value)});
-  goldName.value="";goldQty.value="";
+
+  golds.push({
+    name:goldName.value,
+    qty:Number(goldQty.value),
+    note:goldNote.value || ""
+  });
+
+  goldName.value="";
+  goldQty.value="";
+  goldNote.value="";
+
   render();saveData();resetTimer();
 }
+
 function editGold(i){
   let g=golds[i];
   let n=prompt("Tên cửa hàng:",g.name);
