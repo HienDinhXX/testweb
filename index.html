@@ -250,7 +250,10 @@ function drawChart(goldTotal, bankTotal, onlineTotal){
             const data=context.chart.data.datasets[0].data;
             const total=data.reduce((a,b)=>a+b,0);
             if(total===0||value===0)return '';
-            return ((value/total*100).toFixed(1))+'%';
+
+            const icons=['🥇','🏦','💳'];
+            const percentage=((value/total*100).toFixed(1))+'%';
+            return icons[context.dataIndex]+' '+percentage;
           }
         }
       }
@@ -316,6 +319,12 @@ formatInput(goldPrice);
 formatInput(bankAmount);
 formatInput(onlineAmountInput);
 
+goldPrice.addEventListener("input",()=>{
+  saveData();
+  render();
+  resetTimer();
+});
+
 document.addEventListener("click",resetTimer);
 document.addEventListener("keydown",resetTimer);
 
@@ -326,3 +335,4 @@ window.onload=function(){
 
 </body>
 </html>
+    
