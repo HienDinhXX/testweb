@@ -289,12 +289,15 @@ function render(){
   goldList.innerHTML=golds.map((g,i)=>{
     let total=g.qty*price;
     goldTotal+=total;
+    
     return `<div class="item">
-    ${g.name} - ${g.qty} chỉ × ${formatNumber(price)} = ${formatNumber(total)} VND
-    <br>
-    <button class="editBtn" onclick="editGold(${i})">Sửa</button>
-    <button class="deleteBtn" onclick="deleteGold(${i})">Xoá</button>
-    </div>`;
+${g.name} - ${g.qty} chỉ × ${formatNumber(price)} = ${formatNumber(total)} VND
+${g.note ? `<br>📝 ${g.note}` : ""}
+<br>
+<button class="editBtn" onclick="editGold(${i})">Sửa</button>
+<button class="deleteBtn" onclick="deleteGold(${i})">Xoá</button>
+</div>`;
+    
   }).join("");
 
   let bankTotal=0;
