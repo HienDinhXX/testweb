@@ -191,11 +191,27 @@ function addGold(){
 }
 
 function editGold(i){
-  let g=golds[i];
-  let n=prompt("Tên cửa hàng:",g.name);
-  let q=prompt("Số lượng:",g.qty);
-  if(n&&q){golds[i]={name:n,qty:Number(q)};render();saveData();}
+  let g = golds[i];
+
+  let n = prompt("Tên cửa hàng:", g.name);
+  if(n===null) return;
+
+  let q = prompt("Số lượng:", g.qty);
+  if(q===null) return;
+
+  let note = prompt("Ghi chú (có thể để trống):", g.note || "");
+  if(note===null) return;
+
+  golds[i] = {
+    name: n,
+    qty: Number(q),
+    note: note
+  };
+
+  render();
+  saveData();
 }
+
 function deleteGold(i){
   if(confirm("Xoá mục này?")){golds.splice(i,1);render();saveData();}
 }
