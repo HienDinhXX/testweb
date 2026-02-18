@@ -309,6 +309,12 @@ formatInput(onlineAmount);
 formatInput(foreignAmount);
 formatInput(goldPrice);
 
+goldPrice.addEventListener("input",()=>{
+  saveData();
+  render();
+  resetTimer();
+});
+
 window.onload=()=>lockScreen.style.display="flex";
 </script>
 
