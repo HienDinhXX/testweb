@@ -14,93 +14,102 @@ body {
   padding: 20px;
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+h2 {
+  margin-top: 0;
 }
 input {
   width: 100%;
-  padding: 12px;
-  margin: 10px 0;
+  padding: 10px;
+  margin: 8px 0;
   border-radius: 10px;
   border: 1px solid #ccc;
   font-size: 16px;
 }
-button {
-  width: 100%;
-  padding: 12px;
-  background: #007AFF;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 16px;
-}
 .total {
   font-size: 22px;
-  margin-top: 15px;
   font-weight: bold;
-}
-.history {
   margin-top: 20px;
-  font-size: 14px;
-}
-.item {
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
 }
 </style>
 </head>
 <body>
 
 <div class="card">
-<h2>💰 Tài sản tiết kiệm</h2>
+  <h2>🥇 Vàng</h2>
+  <label>Số lượng</label>
+  <input type="number" id="goldQty">
+  <label>Đơn giá (VND)</label>
+  <input type="number" id="goldPrice">
+  <div id="goldTotal"></div>
+</div>
 
-<input type="number" id="amount" placeholder="Nhập số tiền">
+<div class="card">
+  <h2>🏦 Sổ tiết kiệm cứng</h2>
+  <label>Tên ngân hàng</label>
+  <input type="text" id="bankName">
+  <label>Số tiền (VND)</label>
+  <input type="number" id="bankAmount">
+</div>
 
-<button onclick="addMoney()">Lưu</button>
+<div class="card">
+  <h2>💳 Sổ tiết kiệm online</h2>
+  <label>Số tiền (VND)</label>
+  <input type="number" id="onlineAmount">
+</div>
 
-<div class="total" id="total">Tổng: 0 VND</div>
-
-<div class="history" id="history"></div>
+<div class="card total" id="grandTotal">
+  Tổng tài sản: 0 VND
 </div>
 
 <script>
-let total = 0;
-let history = [];
+function saveData() {
+  const data = {
+    goldQty: goldQty.value,
+    goldPrice: goldPrice.value,
+    bankName: bankName.value,
+    bankAmount: bankAmount.value,
+    onlineAmount: onlineAmount.value
+  };
+  localStorage.setItem("assets", JSON.stringify(data));
+}
+
+function loadData() {
+  const data = JSON.parse(localStorage.getItem("assets"));
+  if (!data) return;
+
+  goldQty.value = data.goldQty || "";
+  goldPrice.value = data.goldPrice || "";
+  bankName.value = data.bankName || "";
+  bankAmount.value = data.bankAmount || "";
+  onlineAmount.value = data.onlineAmount || "";
+}
+
+function calculate() {
+  const qty = Number(goldQty.value) || 0;
+  const price = Number(goldPrice.value) || 0;
+  const goldTotalValue = qty * price;
+
+  const bank = Number(bankAmount.value) || 0;
+  const online = Number(onlineAmount.value) || 0;
+
+  const total = goldTotalValue + bank + online;
+
+  goldTotal.innerText = "Tổng vàng: " + goldTotalValue.toLocaleString() + " VND";
+  grandTotal.innerText = "Tổng tài sản: " + total.toLocaleString() + " VND";
+
+  saveData();
+}
+
+document.querySelectorAll("input").forEach(input => {
+  input.addEventListener("input", calculate);
+});
 
 window.onload = function() {
-  total = Number(localStorage.getItem("total")) || 0;
-  history = JSON.parse(localStorage.getItem("history")) || [];
-  updateUI();
+  loadData();
+  calculate();
 };
-
-function addMoney() {
-  let amount = Number(document.getElementById("amount").value);
-  if (!amount) return;
-
-  total += amount;
-  history.push({
-    value: amount,
-    date: new Date().toLocaleString()
-  });
-
-  localStorage.setItem("total", total);
-  localStorage.setItem("history", JSON.stringify(history));
-
-  document.getElementById("amount").value = "";
-  updateUI();
-}
-
-function updateUI() {
-  document.getElementById("total").innerText =
-    "Tổng: " + total.toLocaleString() + " VND";
-
-  let html = "";
-  history.slice().reverse().forEach(item => {
-    html += "<div class='item'>+" +
-      item.value.toLocaleString() +
-      " VND - " + item.date + "</div>";
-  });
-
-  document.getElementById("history").innerHTML = html;
-}
 </script>
 
 </body>
