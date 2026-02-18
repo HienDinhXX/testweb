@@ -3,6 +3,10 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Quản lý tài sản</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+
 <style>
 body{
   font-family:-apple-system,sans-serif;
@@ -68,7 +72,7 @@ button{
 <input type="text" id="goldPrice">
 <hr>
 <input type="text" id="goldName" placeholder="Tên cửa hàng">
-<input type="number" id="goldQty" placeholder="Số lượng (chỉ)">
+<input type="number" step="0.01" id="goldQty" placeholder="Số lượng (chỉ)">
 <button class="addBtn" onclick="addGold()">Thêm vàng</button>
 <div id="goldList"></div>
 </div>
@@ -92,6 +96,12 @@ button{
 <div id="onlineList"></div>
 </div>
 
+<div class="card">
+<h2>📊 Tỷ lệ tài sản</h2>
+<canvas id="assetChart"></canvas>
+<div id="assetSummary" style="margin-top:10px;font-size:13px;"></div>
+</div>
+
 <div class="card total" id="grandTotal">
 Tổng tài sản: 0 VND
 </div>
@@ -100,10 +110,11 @@ Tổng tài sản: 0 VND
 
 <script>
 let golds=[],banks=[],onlines=[];
+let assetChart;
 let lockTimer;
 const FIXED_PIN="981202";
 
-/* -------- AUTO LOCK -------- */
+/* AUTO LOCK */
 function resetTimer(){
   clearTimeout(lockTimer);
   lockTimer=setTimeout(()=>{ lockApp(); },180000);
@@ -114,7 +125,7 @@ function lockApp(){
   pinInput.value="";
 }
 
-/* -------- PIN -------- */
+/* PIN */
 function checkPIN(){
   if(pinInput.value===FIXED_PIN){
     lockScreen.style.display="none";
@@ -127,15 +138,25 @@ function checkPIN(){
   }
 }
 
-/* -------- FORMAT -------- */
+/* FORMAT */
 function formatNumber(num){
   return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g,".");
 }
 function parseNumber(str){
   return Number(str.replace(/\./g,""))||0;
 }
+function formatInput(input){
+  input.addEventListener("input", function(){
+    let value = input.value.replace(/\D/g,"");
+    if(value){
+      input.value = formatNumber(Number(value));
+    }else{
+      input.value="";
+    }
+  });
+}
 
-/* -------- DATA -------- */
+/* DATA */
 function saveData(){
   localStorage.setItem("golds",JSON.stringify(golds));
   localStorage.setItem("banks",JSON.stringify(banks));
@@ -150,7 +171,7 @@ function loadData(){
   render();
 }
 
-/* -------- GOLD -------- */
+/* GOLD */
 function addGold(){
   if(!goldName.value||!goldQty.value)return;
   golds.push({name:goldName.value,qty:Number(goldQty.value)});
@@ -167,7 +188,7 @@ function deleteGold(i){
   if(confirm("Xoá mục này?")){golds.splice(i,1);render();saveData();}
 }
 
-/* -------- BANK -------- */
+/* BANK */
 function addBank(){
   if(!bankName.value||!bankAmount.value||!bankDate.value)return;
   banks.push({name:bankName.value,amount:parseNumber(bankAmount.value),date:bankDate.value});
@@ -185,7 +206,7 @@ function deleteBank(i){
   if(confirm("Xoá mục này?")){banks.splice(i,1);render();saveData();}
 }
 
-/* -------- ONLINE -------- */
+/* ONLINE */
 function addOnline(){
   if(!onlineAmountInput.value||!onlineDate.value)return;
   onlines.push({amount:parseNumber(onlineAmountInput.value),date:onlineDate.value});
@@ -202,7 +223,49 @@ function deleteOnline(i){
   if(confirm("Xoá mục này?")){onlines.splice(i,1);render();saveData();}
 }
 
-/* -------- RENDER -------- */
+/* CHART */
+function drawChart(goldTotal, bankTotal, onlineTotal){
+  const ctx = document.getElementById('assetChart');
+
+  if(assetChart){
+    assetChart.destroy();
+  }
+
+  assetChart = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels: ['Vàng', 'Sổ cứng', 'Sổ online'],
+      datasets: [{
+        data: [goldTotal, bankTotal, onlineTotal],
+        backgroundColor: ['#FFD700','#007AFF','#34C759']
+      }]
+    },
+    options: {
+      plugins:{
+        legend:{ display:false },
+        datalabels: {
+          color:'#fff',
+          font:{weight:'bold',size:14},
+          formatter:(value,context)=>{
+            const data=context.chart.data.datasets[0].data;
+            const total=data.reduce((a,b)=>a+b,0);
+            if(total===0||value===0)return '';
+            return ((value/total*100).toFixed(1))+'%';
+          }
+        }
+      }
+    },
+    plugins:[ChartDataLabels]
+  });
+
+  assetSummary.innerHTML=`
+    🥇 Vàng: <b>${formatNumber(goldTotal)} VND</b><br>
+    🏦 Sổ cứng: <b>${formatNumber(bankTotal)} VND</b><br>
+    💳 Sổ online: <b>${formatNumber(onlineTotal)} VND</b>
+  `;
+}
+
+/* RENDER */
 function render(){
   let price=parseNumber(goldPrice.value);
   goldPrice.value=price?formatNumber(price):"";
@@ -245,9 +308,14 @@ function render(){
 
   grandTotal.innerText="Tổng tài sản: "+
     formatNumber(goldTotal+bankTotal+onlineTotal)+" VND";
+
+  drawChart(goldTotal,bankTotal,onlineTotal);
 }
 
-goldPrice.addEventListener("input",()=>{render();resetTimer();});
+formatInput(goldPrice);
+formatInput(bankAmount);
+formatInput(onlineAmountInput);
+
 document.addEventListener("click",resetTimer);
 document.addEventListener("keydown",resetTimer);
 
