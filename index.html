@@ -42,7 +42,6 @@ button{
 .deleteBtn{background:#ff3b30;color:white;}
 .item{padding:6px 0;border-bottom:1px solid #eee;font-size:13px;}
 .total{font-size:16px;font-weight:bold;}
-
 #lockScreen{
   position:fixed;
   top:0;left:0;
@@ -66,12 +65,10 @@ button{
 
 <div id="app" style="display:none;">
 
-<!-- VÀNG -->
 <div class="card">
-<h2>🥇 Vàng (đơn vị: chỉ)</h2>
-<label>Đơn giá vàng (VND)</label>
+<h2>🥇 Vàng</h2>
+<label>Giá vàng (VND / chỉ)</label>
 <input type="text" id="goldPrice">
-<hr>
 <input type="text" id="goldName" placeholder="Tên cửa hàng">
 <input type="number" step="0.01" id="goldQty" placeholder="Số lượng (chỉ)">
 <input type="text" id="goldNote" placeholder="Ghi chú (không bắt buộc)">
@@ -79,48 +76,41 @@ button{
 <div id="goldList"></div>
 </div>
 
-<!-- SỔ CỨNG -->
 <div class="card">
 <h2>🏦 Sổ tiết kiệm cứng</h2>
 <input type="text" id="bankName" placeholder="Tên ngân hàng">
-<input type="text" id="bankAmount" placeholder="Số tiền (VND)">
-<label>Ngày mở sổ</label>
+<input type="text" id="bankAmount" placeholder="Số tiền">
 <input type="date" id="bankDate">
-<button class="addBtn" onclick="addBank()">Thêm ngân hàng</button>
+<button class="addBtn" onclick="addBank()">Thêm</button>
 <div id="bankList"></div>
 </div>
 
-<!-- SỔ ONLINE -->
 <div class="card">
 <h2>💳 Sổ tiết kiệm online</h2>
-<input type="text" id="onlineAmountInput" placeholder="Số tiền (VND)">
-<label>Ngày mở sổ</label>
+<input type="text" id="onlineAmount" placeholder="Số tiền">
 <input type="date" id="onlineDate">
-<button class="addBtn" onclick="addOnline()">Thêm sổ online</button>
+<button class="addBtn" onclick="addOnline()">Thêm</button>
 <div id="onlineList"></div>
 </div>
 
-<!-- NGOẠI TỆ -->
 <div class="card">
 <h2>💱 Ngoại tệ</h2>
 <select id="foreignCurrency">
-  <option value="USD">USD - Mỹ</option>
-  <option value="EUR">EUR - EU</option>
-  <option value="JPY">JPY - Nhật</option>
-  <option value="KRW">KRW - Hàn</option>
-  <option value="CNY">CNY - Trung</option>
+<option value="USD">USD</option>
+<option value="EUR">EUR</option>
+<option value="JPY">JPY</option>
+<option value="KRW">KRW</option>
+<option value="CNY">CNY</option>
 </select>
 <input type="text" id="foreignAmount" placeholder="Số tiền">
 <input type="text" id="foreignNote" placeholder="Ghi chú (không bắt buộc)">
-<button class="addBtn" onclick="addForeign()">Thêm ngoại tệ</button>
+<button class="addBtn" onclick="addForeign()">Thêm</button>
 <div id="foreignList"></div>
 </div>
 
-<!-- BIỂU ĐỒ -->
 <div class="card">
 <h2>📊 Tỷ lệ tài sản</h2>
 <canvas id="assetChart"></canvas>
-<div id="assetSummary" style="margin-top:10px;font-size:13px;"></div>
 </div>
 
 <div class="card total" id="grandTotal">
@@ -135,10 +125,10 @@ let assetChart;
 let lockTimer;
 const FIXED_PIN="981202";
 
-/* LOCK */
+/* ===== LOCK ===== */
 function resetTimer(){
   clearTimeout(lockTimer);
-  lockTimer=setTimeout(()=>lockApp(),180000);
+  lockTimer=setTimeout(lockApp,180000);
 }
 function lockApp(){
   app.style.display="none";
@@ -149,39 +139,37 @@ document.addEventListener("visibilitychange",()=>{
   if(document.hidden) lockApp();
 });
 
-/* PIN */
+/* ===== PIN ===== */
 function checkPIN(){
   if(pinInput.value===FIXED_PIN){
     lockScreen.style.display="none";
     app.style.display="block";
     loadData();
     resetTimer();
-    pinError.innerText="";
   }else{
     pinError.innerText="Sai mật khẩu!";
   }
 }
 
-/* FORMAT */
+/* ===== FORMAT ===== */
 function formatNumber(num){
   return Number(num).toLocaleString("vi-VN");
 }
 function parseNumber(str){
   if(!str) return 0;
   str=str.replace(/\./g,"");
-  let num=Number(str)||0;
-  return Math.round(num/1000)*1000;
+  let n=Number(str)||0;
+  return Math.round(n/1000)*1000;
 }
 function formatInput(input){
-  input.addEventListener("input",function(){
-    let value=input.value.replace(/\D/g,"");
-    if(!value){ input.value=""; return;}
-    value=value.replace(/\B(?=(\d{3})+(?!\d))/g,".");
-    input.value=value;
+  input.addEventListener("input",()=>{
+    let v=input.value.replace(/\D/g,"");
+    if(!v){input.value="";return;}
+    input.value=v.replace(/\B(?=(\d{3})+(?!\d))/g,".");
   });
 }
 
-/* SAVE LOAD */
+/* ===== SAVE ===== */
 function saveData(){
   localStorage.setItem("golds",JSON.stringify(golds));
   localStorage.setItem("banks",JSON.stringify(banks));
@@ -198,25 +186,137 @@ function loadData(){
   render();
 }
 
-/* ========== CÁC HÀM ADD / EDIT / DELETE GIỮ NGUYÊN LOGIC GỐC ========== */
-/* (Do quá dài, phần còn lại giống bản gốc của bạn nhưng đã thêm ngoại tệ
-   và giữ đầy đủ nút sửa xoá + chart % + icon như ban đầu) */
+/* ===== ADD ===== */
+function addGold(){
+  if(!goldName.value||!goldQty.value)return;
+  golds.push({
+    name:goldName.value,
+    qty:Number(goldQty.value),
+    note:goldNote.value||""
+  });
+  goldName.value="";goldQty.value="";goldNote.value="";
+  saveData();render();
+}
+function addBank(){
+  if(!bankName.value||!bankAmount.value)return;
+  banks.push({
+    name:bankName.value,
+    amount:parseNumber(bankAmount.value),
+    date:bankDate.value
+  });
+  bankName.value="";bankAmount.value="";bankDate.value="";
+  saveData();render();
+}
+function addOnline(){
+  if(!onlineAmount.value)return;
+  onlines.push({
+    amount:parseNumber(onlineAmount.value),
+    date:onlineDate.value
+  });
+  onlineAmount.value="";onlineDate.value="";
+  saveData();render();
+}
+async function addForeign(){
+  if(!foreignAmount.value)return;
+  let cur=foreignCurrency.value;
+  let res=await fetch(`https://api.exchangerate.host/latest?base=${cur}&symbols=VND`);
+  let data=await res.json();
+  let rate=data.rates.VND||0;
+  let amount=Number(foreignAmount.value.replace(/\./g,""));
+  let vnd=Math.round((amount*rate)/1000)*1000;
+  foreigns.push({
+    currency:cur,
+    amount:amount,
+    value:vnd,
+    note:foreignNote.value||""
+  });
+  foreignAmount.value="";foreignNote.value="";
+  saveData();render();
+}
 
-goldPrice.addEventListener("input",()=>{
-  saveData();
-  render();
-  resetTimer();
-});
+/* ===== DELETE ===== */
+function deleteItem(arr,i){
+  if(confirm("Xoá mục này?")){
+    arr.splice(i,1);
+    saveData();render();
+  }
+}
 
+/* ===== RENDER ===== */
+function render(){
+  let price=parseNumber(goldPrice.value);
+  goldPrice.value=price?formatNumber(price):"";
+
+  let goldTotal=0;
+  goldList.innerHTML=golds.map((g,i)=>{
+    let total=Math.round((g.qty*price)/1000)*1000;
+    goldTotal+=total;
+    return `<div class="item">
+      ${g.name} - ${g.qty} chỉ = ${formatNumber(total)} VND
+      ${g.note?`<br>📝 ${g.note}`:""}
+      <br><button class="deleteBtn" onclick="deleteItem(golds,${i})">Xoá</button>
+    </div>`;
+  }).join("");
+
+  let bankTotal=0;
+  bankList.innerHTML=banks.map((b,i)=>{
+    bankTotal+=b.amount;
+    return `<div class="item">
+      ${b.name} - ${formatNumber(b.amount)} VND
+      <br><button class="deleteBtn" onclick="deleteItem(banks,${i})">Xoá</button>
+    </div>`;
+  }).join("");
+
+  let onlineTotal=0;
+  onlineList.innerHTML=onlines.map((o,i)=>{
+    onlineTotal+=o.amount;
+    return `<div class="item">
+      ${formatNumber(o.amount)} VND
+      <br><button class="deleteBtn" onclick="deleteItem(onlines,${i})">Xoá</button>
+    </div>`;
+  }).join("");
+
+  let foreignTotal=0;
+  foreignList.innerHTML=foreigns.map((f,i)=>{
+    foreignTotal+=f.value;
+    return `<div class="item">
+      ${formatNumber(f.amount)} ${f.currency}
+      ≈ ${formatNumber(f.value)} VND
+      ${f.note?`<br>📝 ${f.note}`:""}
+      <br><button class="deleteBtn" onclick="deleteItem(foreigns,${i})">Xoá</button>
+    </div>`;
+  }).join("");
+
+  grandTotal.innerText="Tổng tài sản: "+
+    formatNumber(goldTotal+bankTotal+onlineTotal+foreignTotal)+" VND";
+
+  drawChart(goldTotal,bankTotal,onlineTotal,foreignTotal);
+}
+
+/* ===== CHART ===== */
+function drawChart(a,b,c,d){
+  if(assetChart) assetChart.destroy();
+  assetChart=new Chart(assetChart=document.getElementById("assetChart"),{
+    type:"pie",
+    data:{
+      labels:["Vàng","Sổ cứng","Online","Ngoại tệ"],
+      datasets:[{
+        data:[a,b,c,d],
+        backgroundColor:["#FFD700","#007AFF","#34C759","#AF52DE"]
+      }]
+    }
+  });
+}
+
+/* ===== INIT ===== */
 formatInput(bankAmount);
-formatInput(onlineAmountInput);
+formatInput(onlineAmount);
 formatInput(foreignAmount);
 formatInput(goldPrice);
 
-window.onload=function(){
-  lockScreen.style.display="flex";
-};
-</script>
+goldPrice.addEventListener("input",()=>{saveData();render();});
 
+window.onload=()=>lockScreen.style.display="flex";
+</script>
 </body>
 </html>
