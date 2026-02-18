@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Cộng 2 Số</title>
+</head>
+<body style="font-family: sans-serif; padding:20px;">
+
+<h2>Tính tổng 2 số</h2>
+
+<input type="number" id="a" placeholder="Số thứ nhất"><br><br>
+<input type="number" id="b" placeholder="Số thứ hai"><br><br>
+
+<button onclick="tinh()">Tính</button>
+
+<h3 id="ketqua">Kết quả:</h3>
+
+<script>
+function tinh() {
+  var a = Number(document.getElementById("a").value);
+  var b = Number(document.getElementById("b").value);
+  document.getElementById("ketqua").innerText =
+    "Kết quả: " + (a + b);
+}
+</script>
+
+</body>
+</html>
