@@ -73,6 +73,7 @@ button{
 <hr>
 <input type="text" id="goldName" placeholder="Tên cửa hàng">
 <input type="number" step="0.01" id="goldQty" placeholder="Số lượng (chỉ)">
+<input type="text" id="goldNote" placeholder="Ghi chú (không bắt buộc)">
 <button class="addBtn" onclick="addGold()">Thêm vàng</button>
 <div id="goldList"></div>
 </div>
@@ -125,6 +126,13 @@ function lockApp(){
   pinInput.value="";
 }
 
+/* LOCK WHEN SWITCH APP */
+document.addEventListener("visibilitychange", ()=>{
+  if(document.hidden){
+    lockApp();
+  }
+});
+
 /* PIN */
 function checkPIN(){
   if(pinInput.value===FIXED_PIN){
@@ -174,53 +182,109 @@ function loadData(){
 /* GOLD */
 function addGold(){
   if(!goldName.value||!goldQty.value)return;
-  golds.push({name:goldName.value,qty:Number(goldQty.value)});
-  goldName.value="";goldQty.value="";
-  render();saveData();resetTimer();
+
+  golds.push({
+    name:goldName.value,
+    qty:Number(goldQty.value),
+    note:goldNote.value || ""
+  });
+
+  goldName.value="";
+  goldQty.value="";
+  goldNote.value="";
+
+  render();
+  saveData();
+  resetTimer();
 }
 function editGold(i){
   let g=golds[i];
+
   let n=prompt("Tên cửa hàng:",g.name);
   let q=prompt("Số lượng:",g.qty);
-  if(n&&q){golds[i]={name:n,qty:Number(q)};render();saveData();}
+  let note=prompt("Ghi chú:",g.note || "");
+
+  if(n&&q){
+    golds[i]={
+      name:n,
+      qty:Number(q),
+      note:note || ""
+    };
+    render();
+    saveData();
+  }
 }
 function deleteGold(i){
-  if(confirm("Xoá mục này?")){golds.splice(i,1);render();saveData();}
+  if(confirm("Xoá mục này?")){
+    golds.splice(i,1);
+    render();
+    saveData();
+  }
 }
 
 /* BANK */
 function addBank(){
   if(!bankName.value||!bankAmount.value||!bankDate.value)return;
-  banks.push({name:bankName.value,amount:parseNumber(bankAmount.value),date:bankDate.value});
-  bankName.value="";bankAmount.value="";bankDate.value="";
-  render();saveData();resetTimer();
+  banks.push({
+    name:bankName.value,
+    amount:parseNumber(bankAmount.value),
+    date:bankDate.value
+  });
+  bankName.value="";
+  bankAmount.value="";
+  bankDate.value="";
+  render();
+  saveData();
+  resetTimer();
 }
 function editBank(i){
   let b=banks[i];
   let n=prompt("Tên ngân hàng:",b.name);
   let a=prompt("Số tiền:",formatNumber(b.amount));
   let d=prompt("Ngày mở:",b.date);
-  if(n&&a&&d){banks[i]={name:n,amount:parseNumber(a),date:d};render();saveData();}
+  if(n&&a&&d){
+    banks[i]={name:n,amount:parseNumber(a),date:d};
+    render();
+    saveData();
+  }
 }
 function deleteBank(i){
-  if(confirm("Xoá mục này?")){banks.splice(i,1);render();saveData();}
+  if(confirm("Xoá mục này?")){
+    banks.splice(i,1);
+    render();
+    saveData();
+  }
 }
 
 /* ONLINE */
 function addOnline(){
   if(!onlineAmountInput.value||!onlineDate.value)return;
-  onlines.push({amount:parseNumber(onlineAmountInput.value),date:onlineDate.value});
-  onlineAmountInput.value="";onlineDate.value="";
-  render();saveData();resetTimer();
+  onlines.push({
+    amount:parseNumber(onlineAmountInput.value),
+    date:onlineDate.value
+  });
+  onlineAmountInput.value="";
+  onlineDate.value="";
+  render();
+  saveData();
+  resetTimer();
 }
 function editOnline(i){
   let o=onlines[i];
   let a=prompt("Số tiền:",formatNumber(o.amount));
   let d=prompt("Ngày mở:",o.date);
-  if(a&&d){onlines[i]={amount:parseNumber(a),date:d};render();saveData();}
+  if(a&&d){
+    onlines[i]={amount:parseNumber(a),date:d};
+    render();
+    saveData();
+  }
 }
 function deleteOnline(i){
-  if(confirm("Xoá mục này?")){onlines.splice(i,1);render();saveData();}
+  if(confirm("Xoá mục này?")){
+    onlines.splice(i,1);
+    render();
+    saveData();
+  }
 }
 
 /* CHART */
@@ -250,7 +314,6 @@ function drawChart(goldTotal, bankTotal, onlineTotal){
             const data=context.chart.data.datasets[0].data;
             const total=data.reduce((a,b)=>a+b,0);
             if(total===0||value===0)return '';
-
             const icons=['🥇','🏦','💳'];
             const percentage=((value/total*100).toFixed(1))+'%';
             return icons[context.dataIndex]+' '+percentage;
@@ -277,8 +340,10 @@ function render(){
   goldList.innerHTML=golds.map((g,i)=>{
     let total=g.qty*price;
     goldTotal+=total;
+
     return `<div class="item">
     ${g.name} - ${g.qty} chỉ × ${formatNumber(price)} = ${formatNumber(total)} VND
+    ${g.note ? `<br>📝 ${g.note}` : ""}
     <br>
     <button class="editBtn" onclick="editGold(${i})">Sửa</button>
     <button class="deleteBtn" onclick="deleteGold(${i})">Xoá</button>
@@ -335,4 +400,3 @@ window.onload=function(){
 
 </body>
 </html>
-    
