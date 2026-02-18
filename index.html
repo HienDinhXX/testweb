@@ -79,33 +79,40 @@ button{
 <div id="goldList"></div>
 </div>
 
-<!-- NGÂN HÀNG -->
+<!-- SỔ CỨNG -->
 <div class="card">
-<h2>🏦 Sổ tiết kiệm</h2>
+<h2>🏦 Sổ tiết kiệm cứng</h2>
 <input type="text" id="bankName" placeholder="Tên ngân hàng">
 <input type="text" id="bankAmount" placeholder="Số tiền (VND)">
+<label>Ngày mở sổ</label>
 <input type="date" id="bankDate">
 <button class="addBtn" onclick="addBank()">Thêm</button>
 <div id="bankList"></div>
 </div>
 
+<!-- SỔ ONLINE -->
+<div class="card">
+<h2>💳 Sổ tiết kiệm online</h2>
+<input type="text" id="onlineAmount" placeholder="Số tiền (VND)">
+<label>Ngày mở sổ</label>
+<input type="date" id="onlineDate">
+<button class="addBtn" onclick="addOnline()">Thêm</button>
+<div id="onlineList"></div>
+</div>
+
 <!-- NGOẠI TỆ -->
 <div class="card">
 <h2>💱 Ngoại tệ</h2>
-
 <select id="foreignCurrency">
   <option value="USD">USD - Mỹ</option>
-  <option value="EUR">EUR - Châu Âu</option>
+  <option value="EUR">EUR - EU</option>
   <option value="JPY">JPY - Nhật</option>
   <option value="KRW">KRW - Hàn</option>
   <option value="CNY">CNY - Trung</option>
 </select>
-
-<input type="number" id="foreignAmount" placeholder="Số tiền">
+<input type="text" id="foreignAmount" placeholder="Số tiền">
 <input type="text" id="foreignNote" placeholder="Ghi chú (không bắt buộc)">
-
 <button class="addBtn" onclick="addForeign()">Thêm ngoại tệ</button>
-
 <div id="foreignList"></div>
 </div>
 
@@ -113,7 +120,6 @@ button{
 <div class="card">
 <h2>📊 Tỷ lệ tài sản</h2>
 <canvas id="assetChart"></canvas>
-<div id="assetSummary"></div>
 </div>
 
 <div class="card total" id="grandTotal">
@@ -123,7 +129,7 @@ Tổng tài sản: 0 VND
 </div>
 
 <script>
-let golds=[],banks=[],foreigns=[];
+let golds=[],banks=[],onlines=[],foreigns=[];
 let assetChart;
 let lockTimer;
 const FIXED_PIN="981202";
@@ -157,22 +163,35 @@ function checkPIN(){
 
 /* FORMAT */
 function formatNumber(num){
-  return num.toLocaleString("vi-VN");
+  return Number(num).toLocaleString("vi-VN");
 }
 function parseNumber(str){
-  return Number(str.replace(/\./g,""))||0;
+  if(!str) return 0;
+  str=str.replace(/\./g,"");
+  let num=Number(str)||0;
+  return Math.round(num/1000)*1000;
+}
+function formatInput(input){
+  input.addEventListener("input",function(){
+    let value=input.value.replace(/\D/g,"");
+    if(!value){ input.value=""; return;}
+    value=value.replace(/\B(?=(\d{3})+(?!\d))/g,".");
+    input.value=value;
+  });
 }
 
 /* DATA */
 function saveData(){
   localStorage.setItem("golds",JSON.stringify(golds));
   localStorage.setItem("banks",JSON.stringify(banks));
+  localStorage.setItem("onlines",JSON.stringify(onlines));
   localStorage.setItem("foreigns",JSON.stringify(foreigns));
   localStorage.setItem("goldPrice",goldPrice.value);
 }
 function loadData(){
   golds=JSON.parse(localStorage.getItem("golds"))||[];
   banks=JSON.parse(localStorage.getItem("banks"))||[];
+  onlines=JSON.parse(localStorage.getItem("onlines"))||[];
   foreigns=JSON.parse(localStorage.getItem("foreigns"))||[];
   goldPrice.value=localStorage.getItem("goldPrice")||"";
   render();
@@ -202,7 +221,18 @@ function addBank(){
   render();saveData();resetTimer();
 }
 
-/* FETCH TỈ GIÁ */
+/* ONLINE */
+function addOnline(){
+  if(!onlineAmount.value||!onlineDate.value)return;
+  onlines.push({
+    amount:parseNumber(onlineAmount.value),
+    date:onlineDate.value
+  });
+  onlineAmount.value="";onlineDate.value="";
+  render();saveData();resetTimer();
+}
+
+/* FETCH RATE */
 async function getExchangeRate(currency){
   const res=await fetch("https://open.er-api.com/v6/latest/USD");
   const data=await res.json();
@@ -214,85 +244,70 @@ async function getExchangeRate(currency){
 /* FOREIGN */
 async function addForeign(){
   if(!foreignAmount.value)return;
-
   const currency=foreignCurrency.value;
-  const amount=Number(foreignAmount.value);
+  const amount=Number(foreignAmount.value.replace(/\./g,""));
   const note=foreignNote.value||"";
-
   const rate=await getExchangeRate(currency);
-  const valueVnd=amount*rate;
-
-  foreigns.push({
-    currency,
-    amount,
-    rate,
-    valueVnd,
-    note
-  });
-
-  foreignAmount.value="";
-  foreignNote.value="";
+  let valueVnd=amount*rate;
+  valueVnd=Math.round(valueVnd/1000)*1000;
+  foreigns.push({currency,amount,valueVnd,note});
+  foreignAmount.value="";foreignNote.value="";
   render();saveData();resetTimer();
-}
-
-/* CHART */
-function drawChart(goldTotal, bankTotal, foreignTotal){
-  const ctx=document.getElementById('assetChart');
-  if(assetChart) assetChart.destroy();
-
-  assetChart=new Chart(ctx,{
-    type:'pie',
-    data:{
-      labels:['Vàng','Ngân hàng','Ngoại tệ'],
-      datasets:[{
-        data:[goldTotal,bankTotal,foreignTotal],
-        backgroundColor:['#FFD700','#007AFF','#34C759']
-      }]
-    }
-  });
-
-  assetSummary.innerHTML=`
-  🥇 ${formatNumber(goldTotal)} VND<br>
-  🏦 ${formatNumber(bankTotal)} VND<br>
-  💱 ${formatNumber(foreignTotal)} VND`;
 }
 
 /* RENDER */
 function render(){
   let price=parseNumber(goldPrice.value);
   let goldTotal=0;
-
   goldList.innerHTML=golds.map(g=>{
-    let total=g.qty*price;
+    let total=Math.round(g.qty*price/1000)*1000;
     goldTotal+=total;
-    return `<div class="item">
-    ${g.name} - ${g.qty} chỉ = ${formatNumber(total)} VND
-    ${g.note?`<br>📝 ${g.note}`:""}
-    </div>`;
+    return `<div class="item">${g.name} - ${formatNumber(total)} VND ${g.note?`<br>📝 ${g.note}`:""}</div>`;
   }).join("");
 
   let bankTotal=0;
   bankList.innerHTML=banks.map(b=>{
     bankTotal+=b.amount;
-    return `<div class="item">
-    ${b.name} - ${formatNumber(b.amount)} VND
-    </div>`;
+    return `<div class="item">${b.name} - ${formatNumber(b.amount)} VND</div>`;
+  }).join("");
+
+  let onlineTotal=0;
+  onlineList.innerHTML=onlines.map(o=>{
+    onlineTotal+=o.amount;
+    return `<div class="item">${formatNumber(o.amount)} VND</div>`;
   }).join("");
 
   let foreignTotal=0;
   foreignList.innerHTML=foreigns.map(f=>{
     foreignTotal+=f.valueVnd;
-    return `<div class="item">
-    ${f.amount} ${f.currency} ≈ ${formatNumber(f.valueVnd)} VND
-    ${f.note?`<br>📝 ${f.note}`:""}
-    </div>`;
+    return `<div class="item">${formatNumber(f.amount)} ${f.currency} ≈ ${formatNumber(f.valueVnd)} VND ${f.note?`<br>📝 ${f.note}`:""}</div>`;
   }).join("");
 
-  grandTotal.innerText="Tổng tài sản: "+
-  formatNumber(goldTotal+bankTotal+foreignTotal)+" VND";
+  let totalAll=Math.round((goldTotal+bankTotal+onlineTotal+foreignTotal)/1000)*1000;
+  grandTotal.innerText="Tổng tài sản: "+formatNumber(totalAll)+" VND";
 
-  drawChart(goldTotal,bankTotal,foreignTotal);
+  drawChart(goldTotal,bankTotal,onlineTotal,foreignTotal);
 }
+
+function drawChart(g,b,o,f){
+  const ctx=document.getElementById('assetChart');
+  if(assetChart) assetChart.destroy();
+  assetChart=new Chart(ctx,{
+    type:'pie',
+    data:{
+      labels:['Vàng','Sổ cứng','Sổ online','Ngoại tệ'],
+      datasets:[{
+        data:[g,b,o,f],
+        backgroundColor:['#FFD700','#007AFF','#34C759','#AF52DE']
+      }]
+    }
+  });
+}
+
+formatInput(bankAmount);
+formatInput(onlineAmount);
+formatInput(foreignAmount);
+formatInput(goldPrice);
 
 window.onload=()=>lockScreen.style.display="flex";
 </script>
