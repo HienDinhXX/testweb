@@ -11,105 +11,205 @@ body {
 }
 .card {
   background: white;
-  padding: 20px;
+  padding: 15px;
   border-radius: 15px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.05);
   margin-bottom: 20px;
 }
-h2 {
-  margin-top: 0;
-}
 input {
   width: 100%;
-  padding: 10px;
-  margin: 8px 0;
-  border-radius: 10px;
+  padding: 8px;
+  margin: 6px 0;
+  border-radius: 8px;
   border: 1px solid #ccc;
-  font-size: 16px;
+}
+button {
+  padding: 6px 10px;
+  margin-top: 5px;
+  border-radius: 6px;
+  border: none;
+  font-size: 14px;
+}
+.addBtn { background:#007AFF; color:white; width:100%; }
+.editBtn { background:#ff9500; color:white; }
+.deleteBtn { background:#ff3b30; color:white; }
+.item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
 }
 .total {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: bold;
-  margin-top: 20px;
 }
 </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>🥇 Vàng</h2>
-  <label>Số lượng</label>
-  <input type="number" id="goldQty">
-  <label>Đơn giá (VND)</label>
-  <input type="number" id="goldPrice">
-  <div id="goldTotal"></div>
+<h2>🥇 Vàng</h2>
+
+<input type="text" id="goldName" placeholder="Tên cửa hàng">
+<input type="number" id="goldQty" placeholder="Số lượng">
+<input type="number" id="goldPrice" placeholder="Đơn giá (VND)">
+<button class="addBtn" onclick="addGold()">Thêm vàng</button>
+
+<div id="goldList"></div>
 </div>
 
 <div class="card">
-  <h2>🏦 Sổ tiết kiệm cứng</h2>
-  <label>Tên ngân hàng</label>
-  <input type="text" id="bankName">
-  <label>Số tiền (VND)</label>
-  <input type="number" id="bankAmount">
+<h2>🏦 Sổ tiết kiệm cứng</h2>
+
+<input type="text" id="bankName" placeholder="Tên ngân hàng">
+<input type="number" id="bankAmount" placeholder="Số tiền (VND)">
+<button class="addBtn" onclick="addBank()">Thêm ngân hàng</button>
+
+<div id="bankList"></div>
 </div>
 
 <div class="card">
-  <h2>💳 Sổ tiết kiệm online</h2>
-  <label>Số tiền (VND)</label>
-  <input type="number" id="onlineAmount">
+<h2>💳 Sổ tiết kiệm online</h2>
+<input type="number" id="onlineAmount" placeholder="Số tiền (VND)">
 </div>
 
 <div class="card total" id="grandTotal">
-  Tổng tài sản: 0 VND
+Tổng tài sản: 0 VND
 </div>
 
 <script>
-function saveData() {
-  const data = {
-    goldQty: goldQty.value,
-    goldPrice: goldPrice.value,
-    bankName: bankName.value,
-    bankAmount: bankAmount.value,
-    onlineAmount: onlineAmount.value
-  };
-  localStorage.setItem("assets", JSON.stringify(data));
+let golds = [];
+let banks = [];
+
+function saveData(){
+  localStorage.setItem("golds", JSON.stringify(golds));
+  localStorage.setItem("banks", JSON.stringify(banks));
+  localStorage.setItem("online", onlineAmount.value);
 }
 
-function loadData() {
-  const data = JSON.parse(localStorage.getItem("assets"));
-  if (!data) return;
-
-  goldQty.value = data.goldQty || "";
-  goldPrice.value = data.goldPrice || "";
-  bankName.value = data.bankName || "";
-  bankAmount.value = data.bankAmount || "";
-  onlineAmount.value = data.onlineAmount || "";
+function loadData(){
+  golds = JSON.parse(localStorage.getItem("golds")) || [];
+  banks = JSON.parse(localStorage.getItem("banks")) || [];
+  onlineAmount.value = localStorage.getItem("online") || "";
+  render();
 }
 
-function calculate() {
-  const qty = Number(goldQty.value) || 0;
-  const price = Number(goldPrice.value) || 0;
-  const goldTotalValue = qty * price;
-
-  const bank = Number(bankAmount.value) || 0;
-  const online = Number(onlineAmount.value) || 0;
-
-  const total = goldTotalValue + bank + online;
-
-  goldTotal.innerText = "Tổng vàng: " + goldTotalValue.toLocaleString() + " VND";
-  grandTotal.innerText = "Tổng tài sản: " + total.toLocaleString() + " VND";
-
+function addGold(){
+  if(!goldName.value || !goldQty.value || !goldPrice.value) return;
+  golds.push({
+    name: goldName.value,
+    qty: Number(goldQty.value),
+    price: Number(goldPrice.value)
+  });
+  goldName.value="";
+  goldQty.value="";
+  goldPrice.value="";
+  render();
   saveData();
 }
 
-document.querySelectorAll("input").forEach(input => {
-  input.addEventListener("input", calculate);
+function addBank(){
+  if(!bankName.value || !bankAmount.value) return;
+  banks.push({
+    name: bankName.value,
+    amount: Number(bankAmount.value)
+  });
+  bankName.value="";
+  bankAmount.value="";
+  render();
+  saveData();
+}
+
+function editGold(index){
+  let g = golds[index];
+  let newName = prompt("Tên cửa hàng:", g.name);
+  let newQty = prompt("Số lượng:", g.qty);
+  let newPrice = prompt("Đơn giá:", g.price);
+  if(newName && newQty && newPrice){
+    golds[index] = {
+      name:newName,
+      qty:Number(newQty),
+      price:Number(newPrice)
+    };
+    render();
+    saveData();
+  }
+}
+
+function deleteGold(index){
+  if(confirm("Xoá mục này?")){
+    golds.splice(index,1);
+    render();
+    saveData();
+  }
+}
+
+function editBank(index){
+  let b = banks[index];
+  let newName = prompt("Tên ngân hàng:", b.name);
+  let newAmount = prompt("Số tiền:", b.amount);
+  if(newName && newAmount){
+    banks[index] = {
+      name:newName,
+      amount:Number(newAmount)
+    };
+    render();
+    saveData();
+  }
+}
+
+function deleteBank(index){
+  if(confirm("Xoá mục này?")){
+    banks.splice(index,1);
+    render();
+    saveData();
+  }
+}
+
+function render(){
+  let goldHTML="";
+  let goldTotal=0;
+
+  golds.forEach((g,i)=>{
+    let total=g.qty*g.price;
+    goldTotal+=total;
+    goldHTML+=`
+    <div class="item">
+      ${g.name} - ${g.qty} × ${g.price.toLocaleString()} = ${total.toLocaleString()} VND
+      <br>
+      <button class="editBtn" onclick="editGold(${i})">Sửa</button>
+      <button class="deleteBtn" onclick="deleteGold(${i})">Xoá</button>
+    </div>`;
+  });
+
+  goldList.innerHTML=goldHTML;
+
+  let bankHTML="";
+  let bankTotal=0;
+
+  banks.forEach((b,i)=>{
+    bankTotal+=b.amount;
+    bankHTML+=`
+    <div class="item">
+      ${b.name} - ${b.amount.toLocaleString()} VND
+      <br>
+      <button class="editBtn" onclick="editBank(${i})">Sửa</button>
+      <button class="deleteBtn" onclick="deleteBank(${i})">Xoá</button>
+    </div>`;
+  });
+
+  bankList.innerHTML=bankHTML;
+
+  let online=Number(onlineAmount.value)||0;
+  let totalAll=goldTotal+bankTotal+online;
+
+  grandTotal.innerText="Tổng tài sản: "+totalAll.toLocaleString()+" VND";
+}
+
+onlineAmount.addEventListener("input",()=>{
+  render();
+  saveData();
 });
 
-window.onload = function() {
-  loadData();
-  calculate();
-};
+window.onload=loadData;
 </script>
 
 </body>
