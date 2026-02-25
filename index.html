@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="utf-8">
-  <!-- iPhone 11 Pro Max + notch -->
+  <!-- iPhone notch safe-area -->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Quản lý tài sản</title>
 
@@ -22,6 +22,10 @@
       --gap:14px;
       --container-max: 960px;
     }
+
+    /* >>> FIX TRÀN BỀ RỘNG */
+    *, *::before, *::after { box-sizing: border-box; }
+    input, button, select, textarea, canvas { max-width: 100%; display: block; }
 
     html,body{ height:100%; }
     html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
@@ -55,6 +59,7 @@
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       margin-bottom:var(--gap);
+      overflow: hidden; /* >>> Chặn viền/box-shadow của input tràn ra ngoài card */
     }
 
     h1,h2{ margin:0 0 10px; line-height:1.25; }
@@ -308,7 +313,6 @@
         if (!onlineDate.value) onlineDate.value = getToday();
 
         resetTimer(); pinError.innerText="";
-        // Sau khi mở, focus vào đơn giá vàng cho thao tác nhanh
         setTimeout(()=>goldPrice?.focus(), 100);
       }else{
         pinError.innerText="Sai mật khẩu!";
@@ -460,7 +464,7 @@
 
       let goldTotal=0;
       goldList.innerHTML=golds.map((g,i)=>{
-        const qty = clampQty(g.qty);
+        const qty = Math.max(0, Number(g.qty)||0);
         const total=qty*price;
         goldTotal+=total;
         return `<div class="item">
@@ -474,7 +478,7 @@ ${g.note ? `<br>📝 ${g.note}` : ""}
 
       let bankTotal=0;
       bankList.innerHTML=banks.map((b,i)=>{
-        const amt = clampMoney(b.amount);
+        const amt = Math.max(0, Number(b.amount)||0);
         bankTotal+=amt;
         return `<div class="item">
 ${b.name} - ${formatNumber(amt)} VND
@@ -487,7 +491,7 @@ ${b.name} - ${formatNumber(amt)} VND
 
       let onlineTotal=0;
       onlineList.innerHTML=onlines.map((o,i)=>{
-        const amt = clampMoney(o.amount);
+        const amt = Math.max(0, Number(o.amount)||0);
         onlineTotal+=amt;
         return `<div class="item">
 ${formatNumber(amt)} VND
